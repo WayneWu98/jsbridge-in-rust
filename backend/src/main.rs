@@ -1,13 +1,14 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use backend::ipc::{self, notice};
-use wry::application::window::{Theme, WindowId};
+use backend::core;
+use backend::ipc;
+use wry::application::window::WindowId;
 use wry::webview::WebView;
 use wry::{
     application::{
         dpi::{PhysicalPosition, PhysicalSize, Position, Size},
-        event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
     },
@@ -18,8 +19,10 @@ thread_local! {
     static WEBVIEWS: RefCell<HashMap<WindowId, WebView>> = RefCell::new(HashMap::new());
 }
 
-fn main() -> wry::Result<()> {
-    let event_loop = EventLoop::new();
+#[tokio::main]
+async fn main() -> wry::Result<()> {
+    let event_loop = EventLoop::<core::event::UserEvent>::with_user_event();
+    let event_proxy = Arc::new(event_loop.create_proxy());
     let window = WindowBuilder::new()
         .with_title("An Implementation of JsBridge")
         .with_inner_size(Size::Physical(PhysicalSize::new(750, 1334)))
@@ -40,35 +43,16 @@ fn main() -> wry::Result<()> {
     WEBVIEWS.with(move |webviews| {
         webviews.borrow_mut().insert(id, webview);
     });
+    core::event::listen(event_proxy.clone()).unwrap();
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
-        match event {
-            Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
-
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => *control_flow = ControlFlow::Exit,
-            Event::WindowEvent {
-                event: WindowEvent::ThemeChanged(theme),
-                ..
-            } => {
-                WEBVIEWS.with(|webviews| {
-                    for (_, webview) in webviews.borrow().iter() {
-                        notice(
-                            webview,
-                            ipc::event::Event::ThemeChanged,
-                            Some(serde_json::Value::String(if let Theme::Dark = theme {
-                                "dark".to_owned()
-                            } else {
-                                "light".to_owned()
-                            })),
-                        )
-                        .unwrap();
-                    }
-                });
-            }
-            _ => (),
-        }
+        WEBVIEWS.with(|webviews| {
+            match core::event::handle_event(event, control_flow, &webviews.borrow()) {
+                Err(err) => {
+                    println!("Some error fired: {}", err);
+                }
+                _ => {}
+            };
+        });
     });
 }

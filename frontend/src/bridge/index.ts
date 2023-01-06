@@ -24,6 +24,7 @@ export const invoke = <T>(actionType: ActionType, { data, callback }: {data?: T,
 
 interface ReceivedMsg {
   callbackId?: number,
+  callEnded?: boolean,
   event?: EventType,
   data?: any,
 }
@@ -38,9 +39,13 @@ export const off = (event: EventType, fn: Fn) => {
   _EVENT_HANDLER_BUCKET.get(event)?.delete(fn)
 }
 
-const onReceivedMsg = (window as any).onReceivedMsg = ({ callbackId, event, data }: ReceivedMsg) => {
+const onReceivedMsg = (window as any).onReceivedMsg = (msg: ReceivedMsg) => {
+  console.log('onReceivedMsg', msg)
+  const { callbackId, callEnded, event, data } = msg
+  
   if (callbackId) {
     _CALLBACK_BUCKET.get(callbackId)?.(data)
+    if (callEnded) _CALLBACK_BUCKET.delete(callbackId)
     return
   }
   if (event) {
@@ -55,4 +60,7 @@ const onReceivedMsg = (window as any).onReceivedMsg = ({ callbackId, event, data
 
 on(EventType.ThemeChanged, theme => {
   console.log('ThemeChanged', theme);
+})
+on(EventType.CPUChanged, cpus => {
+  console.log('CPUChanged', cpus);
 })

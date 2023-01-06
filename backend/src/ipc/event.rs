@@ -6,6 +6,8 @@ use serde::Serialize;
 pub enum Event {
     ThemeChanged,
     SystemLog,
+    NetworkChanged,
+    CPUChanged,
 }
 
 impl fmt::Display for Event {
@@ -13,6 +15,8 @@ impl fmt::Display for Event {
         match self {
             Event::ThemeChanged => write!(f, "ThemeChanged"),
             Event::SystemLog => write!(f, "SystemLog"),
+            Event::NetworkChanged => write!(f, "NetworkChanged"),
+            Event::CPUChanged => write!(f, "CPUChanged"),
         }
     }
 }

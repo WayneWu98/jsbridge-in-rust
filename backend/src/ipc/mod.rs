@@ -6,22 +6,35 @@ use action::{Action, ActionPayload};
 use std::error::Error;
 use wry::webview::WebView;
 
+pub struct CallbackPayload(isize, bool);
+
+impl CallbackPayload {
+    fn new(callback_id: isize, call_ended: bool) -> Self {
+        CallbackPayload(callback_id, call_ended)
+    }
+    fn with_ended(callback_id: isize) -> Self {
+        Self::new(callback_id, true)
+    }
+    fn with_unended(callback_id: isize) -> Self {
+        Self::new(callback_id, false)
+    }
+}
+
 pub fn callback(
     wv: &WebView,
-    callback_id: Option<isize>,
+    CallbackPayload(callback_id, call_ended): CallbackPayload,
     data: Option<serde_json::Value>,
 ) -> Result<(), Box<dyn Error>> {
-    if let Some(callback_id) = callback_id {
-        wv.evaluate_script(&format!(
-            "window.onReceivedMsg({{ callbackId: {}, data: {:} }})",
-            callback_id,
-            if let Some(data) = data {
-                data
-            } else {
-                serde_json::Value::Null
-            }
-        ))?;
-    }
+    wv.evaluate_script(&format!(
+        "window.onReceivedMsg({{ callbackId: {}, callEnded: {}, data: {} }})",
+        callback_id,
+        serde_json::Value::Bool(call_ended),
+        if let Some(data) = data {
+            data
+        } else {
+            serde_json::Value::Null
+        }
+    ))?;
 
     Ok(())
 }
@@ -47,7 +60,14 @@ pub fn handle_ipc_msg(msg: String, wv: &WebView) -> Result<(), Box<dyn Error>> {
     let payload: ActionPayload = serde_json::from_str(&msg)?;
     match payload.action_type {
         Action::GetSystemInfo => {
-            system::get_system_info(wv, payload)?;
+            if let Some(callback_id) = payload.callback_id {
+                callback(
+                    wv,
+                    CallbackPayload::with_ended(callback_id),
+                    system::get_system_info()?,
+                )
+                .ok();
+            }
         }
         _ => (),
     };
