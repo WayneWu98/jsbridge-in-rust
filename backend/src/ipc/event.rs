@@ -1,8 +1,6 @@
 use std::fmt;
 
-use serde::Serialize;
-
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Copy, serde::Serialize)]
 pub enum Event {
     ThemeChanged,
     SystemLog,

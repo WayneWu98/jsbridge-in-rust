@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { invoke, ActionType } from './bridge';
+import { invoke, ActionType, download } from './bridge';
 const send = () => {
-  invoke(ActionType.GetSystemInfo, { callback: (...params) => {
-    console.log('GetSystemInfo', ...params);
-  } })
+  download({ url: 'https://static.wayne-wu.com/me-in-2022_2023-01-02-23:57:35.png?imageView2/2/w/1200/q/20' })
 }
 </script>
 

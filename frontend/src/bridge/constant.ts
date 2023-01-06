@@ -1,6 +1,7 @@
 export const enum ActionType {
   SaveFile = 'SaveFile',
   GetSystemInfo = 'GetSystemInfo',
+  DownloadFile = 'DownloadFile',
 }
 
 export const enum EventType {
