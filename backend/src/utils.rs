@@ -7,7 +7,7 @@ pub async fn download<T: IntoUrl>(
     url: T,
     on_progress: impl Fn(u64, u64) -> (),
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let path = path::Path::new("/Users/wayne/Downloads/temp");
+    let path = path::Path::new("/Users/wayne/Downloads/temp.png");
     fs::remove_file(path).ok();
     let mut f = fs::OpenOptions::new().write(true).create(true).open(path)?;
     let res = reqwest::get(url).await?;

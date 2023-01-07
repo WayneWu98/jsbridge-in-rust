@@ -1,6 +1,8 @@
 pub mod action;
 pub mod event;
 
+use serde::Serialize;
+use serde_json::json;
 use std::error::Error;
 use wry::webview::WebView;
 
@@ -21,17 +23,16 @@ impl CallbackPayload {
 pub fn callback(
     wv: &WebView,
     CallbackPayload(callback_id, call_ended): CallbackPayload,
-    data: Option<serde_json::Value>,
+    data: Option<impl Serialize>,
 ) -> Result<(), Box<dyn Error>> {
     wv.evaluate_script(&format!(
-        "window.onReceivedMsg({{ callbackId: {}, callEnded: {}, data: {} }})",
-        callback_id,
-        serde_json::Value::Bool(call_ended),
-        if let Some(data) = data {
-            data
-        } else {
-            serde_json::Value::Null
-        }
+        "window.onReceivedMsg({})",
+        json!({
+            "callbackId": callback_id,
+            "callEnded": serde_json::Value::Bool(call_ended),
+            "data": data,
+            "timestamp": chrono::Utc::now().timestamp_millis(),
+        })
     ))?;
 
     Ok(())
@@ -40,16 +41,16 @@ pub fn callback(
 pub fn notice(
     wv: &WebView,
     event: event::Event,
-    data: Option<serde_json::Value>,
+    data: Option<impl Serialize>,
 ) -> Result<(), Box<dyn Error>> {
     wv.evaluate_script(&format!(
-        "window.onReceivedMsg({{ event: \"{}\", data: {:} }})",
-        event,
-        if let Some(data) = data {
-            data
-        } else {
-            serde_json::Value::Null
-        }
+        "window.onReceivedMsg({})",
+        json!({
+            "event": event,
+            "data": data,
+            "timestamp": chrono::Utc::now().timestamp_millis(),
+        })
     ))?;
+
     Ok(())
 }

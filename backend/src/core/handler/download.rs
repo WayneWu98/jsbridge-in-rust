@@ -20,7 +20,7 @@ impl CallbackType {
     fn to_json(self) -> serde_json::Value {
         match self {
             CallbackType::Progress(progress, total) => {
-                json!({ "type": self, "data": { "total": total.clone(), "progress": progress.clone() } })
+                json!({ "type": "Progress", "data": { "total": total.clone(), "progress": progress.clone() } })
             }
             _ => json!({ "type": self }),
         }
