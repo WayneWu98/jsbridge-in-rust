@@ -31,10 +31,8 @@ pub fn callback(
             "callbackId": callback_id,
             "callEnded": serde_json::Value::Bool(call_ended),
             "data": data,
-            "timestamp": chrono::Utc::now().timestamp_millis(),
         })
     ))?;
-
     Ok(())
 }
 
@@ -48,9 +46,7 @@ pub fn notice(
         json!({
             "event": event,
             "data": data,
-            "timestamp": chrono::Utc::now().timestamp_millis(),
         })
     ))?;
-
     Ok(())
 }

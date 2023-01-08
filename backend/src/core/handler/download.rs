@@ -12,7 +12,7 @@ use crate::ipc::{self, CallbackPayload};
 enum CallbackType {
     Progress(u64, u64),
     Success,
-    Fail,
+    Fail(String),
     Finally,
 }
 
@@ -21,6 +21,9 @@ impl CallbackType {
         match self {
             CallbackType::Progress(progress, total) => {
                 json!({ "type": "Progress", "data": { "total": total.clone(), "progress": progress.clone() } })
+            }
+            CallbackType::Fail(err) => {
+                json!({ "type": "Fail", "data": err })
             }
             _ => json!({ "type": self }),
         }
@@ -55,8 +58,7 @@ pub fn handle(
             .await
             .err();
             if let Some(err) = err {
-                println!("download fail: {:}", err);
-                send_event(CallbackType::Fail).ok();
+                send_event(CallbackType::Fail(err.to_string())).ok();
             } else {
                 send_event(CallbackType::Success).ok();
             }

@@ -1,12 +1,25 @@
 <script setup lang="ts">
-import { invoke, ActionType, download } from './bridge';
-const send = () => {
-  download({ url: 'https://static.wayne-wu.com/me-in-2022_2023-01-02-23:57:35.png?imageView2/2/w/1200/q/20' })
+import * as BridgeAPI from './bridge'
+
+const getSystemInfo = () => {
+  BridgeAPI
+    .getSystemInfo()
+    .then(console.log)
+}
+const download = () => {
+  BridgeAPI
+    .download({ 
+      url: 'https://plus.unsplash.com/premium_photo-1666976923529-f0366d02d726?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=3871&q=80',
+      onProgress: (params) => console.log('onProgress', params),
+      onSuccess: () => console.log('onSuccess'),
+      onFinally: () => console.log('onFinally'),
+    })
 }
 </script>
 
 <template>
-  <button @click="send">GetSystemInfo</button>
+  <button @click="getSystemInfo">GetSystemInfo</button>
+  <button @click="download">Download</button>
 </template>
 
 <style scoped>

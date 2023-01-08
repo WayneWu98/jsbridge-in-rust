@@ -1,8 +1,10 @@
 use ipc::action::{Action, ActionPayload};
-use serde_json::json;
 use std::error::Error;
 use wry::{
-    application::{event_loop::EventLoopProxy, window::WindowId},
+    application::{
+        event_loop::EventLoopProxy,
+        window::{Theme, WindowId},
+    },
     webview::WebView,
 };
 
@@ -44,67 +46,26 @@ pub fn handle_event(
                 }
             }
         },
-        // Event::WindowEvent {
-        //     event: WindowEvent::ThemeChanged(theme),
-        //     ..
-        // } => {
-        //     for (_, webview) in webviews.iter() {
-        //         ipc::notice(
-        //             webview,
-        //             ipc::event::Event::ThemeChanged,
-        //             Some(serde_json::Value::String(if let Theme::Dark = theme {
-        //                 "dark".to_owned()
-        //             } else {
-        //                 "light".to_owned()
-        //             })),
-        //         )
-        //         .unwrap();
-        //     }
-        // },
+        Event::WindowEvent {
+            event: WindowEvent::ThemeChanged(theme),
+            ..
+        } => {
+            for (_, webview) in webviews.iter() {
+                ipc::notice(
+                    webview,
+                    ipc::event::Event::ThemeChanged,
+                    Some(serde_json::Value::String(if let Theme::Dark = theme {
+                        "dark".to_owned()
+                    } else {
+                        "light".to_owned()
+                    })),
+                )
+                .unwrap();
+            }
+        }
         _ => (),
     }
     Ok(())
-}
-
-pub fn listen(
-    event_proxy: Arc<EventLoopProxy<UserEvent>>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    tokio::spawn(async move {
-        tokio::join!(listen_cpu_changed(|system| {
-            let data: Vec<serde_json::Value> = system
-                .cpus()
-                .iter()
-                .map(|cpu| {
-                    serde_json::json!({
-                        "name": cpu.name(),
-                        "frequency": cpu.frequency(),
-                        "usage": cpu.cpu_usage(),
-                        "vendorId": cpu.vendor_id(),
-                        "brand": cpu.brand(),
-                    })
-                })
-                .collect();
-
-            event_proxy
-                .send_event(UserEvent::Notice(
-                    ipc::event::Event::CPUChanged,
-                    Some(serde_json::Value::Array(data)),
-                ))
-                .ok();
-            false
-        }))
-    });
-    Ok(())
-}
-
-pub async fn listen_cpu_changed(f: impl Fn(sysinfo::System) -> bool) {
-    let mut interval = tokio::time::interval(Duration::from_secs(1));
-    loop {
-        interval.tick().await;
-        if f(sysinfo::System::new_all()) {
-            break;
-        }
-    }
 }
 
 pub fn handle_ipc_msg(
